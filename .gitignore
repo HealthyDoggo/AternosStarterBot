@@ -1,0 +1,8 @@
+logs.txt
+pending_responses.json
+correct_ip_addresses.json
+linked_accounts.json
+.env
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
