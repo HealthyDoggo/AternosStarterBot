@@ -30,7 +30,7 @@ async def starting_server(starting):
 
 async def maintain_players_tab():
     with Display():
-        config = nodriver.Config(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+        config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
         browser = await nodriver.Browser.create(config=config)
         print("Starting player monitoring tab")
         try:
@@ -118,7 +118,7 @@ async def get_player_names():
 
 async def get_logs(client, pending_responses, linked_accounts, console_queue):
     with Display():
-        config = nodriver.Config(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+        config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
         browser = await nodriver.Browser.create(config=config)
         try:
             try:
@@ -257,7 +257,7 @@ async def get_console(queue: asyncio.Queue, client, pending_responses, linked_ac
                     await asyncio.sleep(30)  # Wait before checking again
                     continue
 
-                config = nodriver.Config(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+                config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
                 browser = await nodriver.Browser.create(config=config)
                 try:
                     # Open the target page
@@ -350,7 +350,7 @@ async def get_console(queue: asyncio.Queue, client, pending_responses, linked_ac
 
 async def maintain_server_tab():
     with Display():
-        config = nodriver.Config(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+        config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
         browser = await nodriver.Browser.create(config=config)
         print("Starting server monitoring tab")
         try:
@@ -473,4 +473,4 @@ async def start_server():
 if __name__ == '__main__':
     asyncio.run(maintain_server_tab())
     asyncio.run(maintain_players_tab())
-    # ok THIS is the last testing comment. promise.
+    # ok THIS is the last testing comment. promise
