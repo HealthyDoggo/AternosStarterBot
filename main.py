@@ -52,7 +52,7 @@ async def start_server(interaction: discord.Interaction):
             await interaction.followup.send('Error: server already running')
     except Exception as e:
         print(f"Error in start server main function: {e}")
-        await interaction.followup.send("An error occurred. Please try again.")
+        await interaction.followup.send("An error occurred. Please try again.\n {e}")
 # @tree.command(
 #         name="uptime",
 #         description="note: only works when server started by bot.",
@@ -82,7 +82,7 @@ async def checkStatus(interaction: discord.Interaction):
             await interaction.followup.send('The server is currently off', ephemeral=True)
     except Exception as e:
         print(f"Error in check status main function: {e}")
-        await interaction.followup.send("An error occurred. Please try again.")
+        await interaction.followup.send("An error occurred. Please try again.\n {e}")
 @tree.command(
         name="online",
         description="Displays the players currently online on the server.",
@@ -100,7 +100,7 @@ async def displayOnlinePlayers(interaction: discord.Interaction):
             await interaction.followup.send("No one is currently online as the server is off.")
     except Exception as e:
         print(f"Error in display online players main function: {e}")
-        await interaction.followup.send(f"An error occurred. Please try again. {e}")
+        await interaction.followup.send(f"An error occurred. Please try again. \n {e}")
 @tree.command(
         name="link",
         description="Connects this discord account to your minecraft account.",
