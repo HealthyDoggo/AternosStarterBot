@@ -31,6 +31,7 @@ async def starting_server(starting):
 async def maintain_players_tab():
     with Display(visible=0):
         config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
+        config.sandbox = True
         browser = await nodriver.Browser.create(config=config)
         print("Starting player monitoring tab")
         try:
@@ -119,6 +120,7 @@ async def get_player_names():
 async def get_logs(client, pending_responses, linked_accounts, console_queue):
     with Display(visible=0):
         config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
+        config.sandbox = True
         browser = await nodriver.Browser.create(config=config)
         try:
             try:
@@ -258,6 +260,7 @@ async def get_console(queue: asyncio.Queue, client, pending_responses, linked_ac
                     continue
 
                 config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
+                config.sandbox = True
                 browser = await nodriver.Browser.create(config=config)
                 try:
                     # Open the target page
@@ -351,6 +354,7 @@ async def get_console(queue: asyncio.Queue, client, pending_responses, linked_ac
 async def maintain_server_tab():
     with Display(visible=0):
         config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
+        config.sandbox = True
         browser = await nodriver.Browser.create(config=config)
         print("Starting server monitoring tab")
         try:
