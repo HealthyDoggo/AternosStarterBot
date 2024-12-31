@@ -28,7 +28,7 @@ async def starting_server(starting):
         return await check_server_status()
 
 async def maintain_players_tab():
-    browser = await nodriver.Browser.create(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+    browser = await nodriver.Browser.create()
     print("Starting player monitoring tab")
     try:
         # Open the target page
@@ -114,7 +114,7 @@ async def get_player_names():
     return result["players"]
 
 async def get_logs(client, pending_responses, linked_accounts, console_queue):
-    browser = await nodriver.Browser.create(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+    browser = await nodriver.Browser.create()
     try:
         try:
             # Open the target page
@@ -251,7 +251,7 @@ async def get_console(queue: asyncio.Queue, client, pending_responses, linked_ac
                 await asyncio.sleep(30)  # Wait before checking again
                 continue
 
-            browser = await nodriver.Browser.create(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+            browser = await nodriver.Browser.create()
             try:
                 # Open the target page
                 tab = await browser.get("https://aternos.org/go")
@@ -342,7 +342,7 @@ async def get_console(queue: asyncio.Queue, client, pending_responses, linked_ac
             await asyncio.sleep(30)  # Wait before attempting to reconnect
 
 async def maintain_server_tab():
-    browser = await nodriver.Browser.create(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+    browser = await nodriver.Browser.create()
     print("Starting server monitoring tab")
     try:
         # Open the target page

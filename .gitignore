@@ -3,6 +3,7 @@ pending_responses.json
 correct_ip_addresses.json
 linked_accounts.json
 .env
+last_checked_log.txt
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
