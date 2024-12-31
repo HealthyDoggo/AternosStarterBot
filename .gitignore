@@ -4,6 +4,7 @@ correct_ip_addresses.json
 linked_accounts.json
 .env
 last_checked_log.txt
+chromium-mac/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
