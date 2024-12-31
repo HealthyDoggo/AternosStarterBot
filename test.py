@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import re
 from helpers import load_correct_ip_addresses, save_correct_ip_addresses, save_pending_responses, save_last_checked_log, load_last_checked_log
 from ip2geotools.databases.noncommercial import HostIP
+from pyvirtualdisplay import Display
 
 player_ip_addresses = load_correct_ip_addresses()
 last_checked_log = load_last_checked_log()
@@ -28,84 +29,86 @@ async def starting_server(starting):
         return await check_server_status()
 
 async def maintain_players_tab():
-    browser = await nodriver.Browser.create()
-    print("Starting player monitoring tab")
-    try:
-        # Open the target page
-        tab = await browser.get("https://aternos.org/go")
-        
-        # Log in
+    with Display():
+        config = nodriver.Config(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+        browser = await nodriver.Browser.create(config=config)
+        print("Starting player monitoring tab")
         try:
-            input_username = await tab.select("input[placeholder='Username']")
-            await input_username.send_keys("StarterBot")
+            # Open the target page
+            tab = await browser.get("https://aternos.org/go")
             
-            input_password = await tab.select("input[placeholder='••••••••']")
-            await input_password.send_keys("BotAccount")
-            
-            login_button = await tab.select("button[title='Login']")
-            await login_button.click()
-        except:
-            pass
-
-        # Handle cookies consent if present
-        try:
-            cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=10)
-            await cookies.click()
-        except:
-            pass
-
-        # Select the server
-        server_select = await tab.select('div[title="roadblocksjailbrokey"]', timeout=1000)
-        await server_select.click()
-        await asyncio.sleep(1.5)
-
-        # Navigate to players page
-        players_link = await tab.select("a[title='Players']")
-        await players_link.click()
-        print("okay made it to the players while true")
-        while True:
+            # Log in
             try:
-                command = await player_queue.get()
-                if command["action"] == "get_players":
-                    try:
-                        # Wait for players list to appear
-                        player_list_div = await tab.select(".playercardlist.online.collapsed")
-                        player_list_div = await tab.wait_for(".playercardlist.online.collapsed", timeout=20000)
-                        player_cards = await player_list_div.query_selector_all(".playercard.has-details")
+                input_username = await tab.select("input[placeholder='Username']")
+                await input_username.send_keys("StarterBot")
+                
+                input_password = await tab.select("input[placeholder='••••••••']")
+                await input_password.send_keys("BotAccount")
+                
+                login_button = await tab.select("button[title='Login']")
+                await login_button.click()
+            except:
+                pass
 
-                        player_names = []
-                        for card in player_cards:
-                            attributes = card.attrs
-                            player_name = attributes['data-playername']
-                            player_names.append(player_name)
-                        
-                        await command["response_queue"].put({"players": player_names})
-                    except Exception as e:
-                        print(f"Error getting player names: {e}")
-                        await command["response_queue"].put({"players": []})
-                await asyncio.sleep(0.75)
+            # Handle cookies consent if present
+            try:
+                cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=10)
+                await cookies.click()
+            except:
+                pass
 
-            except KeyboardInterrupt:
-                print("Code keyboard interrupted.")
-                break
+            # Select the server
+            server_select = await tab.select('div[title="roadblocksjailbrokey"]', timeout=1000)
+            await server_select.click()
+            await asyncio.sleep(1.5)
 
-            except Exception as e:
-                print(f"Error in players tab: {e}")
-                await asyncio.sleep(1)
+            # Navigate to players page
+            players_link = await tab.select("a[title='Players']")
+            await players_link.click()
+            print("okay made it to the players while true")
+            while True:
+                try:
+                    command = await player_queue.get()
+                    if command["action"] == "get_players":
+                        try:
+                            # Wait for players list to appear
+                            player_list_div = await tab.select(".playercardlist.online.collapsed")
+                            player_list_div = await tab.wait_for(".playercardlist.online.collapsed", timeout=20000)
+                            player_cards = await player_list_div.query_selector_all(".playercard.has-details")
 
-    finally:
-        try:
-            if tab:
-                await tab.close()
-            if browser.connection:
-                await browser.connection.aclose()
-            browser.stop()
-        except Exception as e:
-            print(f"Error during browser closure: {e}")
+                            player_names = []
+                            for card in player_cards:
+                                attributes = card.attrs
+                                player_name = attributes['data-playername']
+                                player_names.append(player_name)
+                            
+                            await command["response_queue"].put({"players": player_names})
+                        except Exception as e:
+                            print(f"Error getting player names: {e}")
+                            await command["response_queue"].put({"players": []})
+                    await asyncio.sleep(0.75)
+
+                except KeyboardInterrupt:
+                    print("Code keyboard interrupted.")
+                    break
+
+                except Exception as e:
+                    print(f"Error in players tab: {e}")
+                    await asyncio.sleep(1)
+
         finally:
-            if browser._process:
-                browser._process.terminate()
-                await browser._process.wait()
+            try:
+                if tab:
+                    await tab.close()
+                if browser.connection:
+                    await browser.connection.aclose()
+                browser.stop()
+            except Exception as e:
+                print(f"Error during browser closure: {e}")
+            finally:
+                if browser._process:
+                    browser._process.terminate()
+                    await browser._process.wait()
 
 async def get_player_names():
     response_queue = asyncio.Queue()
@@ -114,55 +117,57 @@ async def get_player_names():
     return result["players"]
 
 async def get_logs(client, pending_responses, linked_accounts, console_queue):
-    browser = await nodriver.Browser.create()
-    try:
+    with Display():
+        config = nodriver.Config(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+        browser = await nodriver.Browser.create(config=config)
         try:
-            # Open the target page
-            tab = await browser.get("https://aternos.org/go")
+            try:
+                # Open the target page
+                tab = await browser.get("https://aternos.org/go")
+                
+                # Log in
+                input_username = await tab.select("input[placeholder='Username']", timeout=4)
+                await input_username.send_keys("StarterBot")
+                
+                input_password = await tab.select("input[placeholder='••••••••']")
+                await input_password.send_keys("BotAccount")
+                
+                login_button = await tab.select("button[title='Login']")
+                await login_button.click()
+            except:
+                pass
+
+            # Handle cookies consent if present
+            try:
+                cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=4)
+                await cookies.click()
+            except:
+                pass
+
+            # Select the server
+            server_select = await tab.select('div[title="roadblocksjailbrokey"]', timeout=1000)
+            await server_select.click()
+
+            # Open logs page
+            logs_button = await tab.select('a[title="Log"]', timeout=20)
+            await logs_button.click()
+
+            await process_logs(tab, client, pending_responses, linked_accounts, console_queue)
             
-            # Log in
-            input_username = await tab.select("input[placeholder='Username']", timeout=4)
-            await input_username.send_keys("StarterBot")
-            
-            input_password = await tab.select("input[placeholder='••••••••']")
-            await input_password.send_keys("BotAccount")
-            
-            login_button = await tab.select("button[title='Login']")
-            await login_button.click()
-        except:
-            pass
 
-        # Handle cookies consent if present
-        try:
-            cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=4)
-            await cookies.click()
-        except:
-            pass
-
-        # Select the server
-        server_select = await tab.select('div[title="roadblocksjailbrokey"]', timeout=1000)
-        await server_select.click()
-
-        # Open logs page
-        logs_button = await tab.select('a[title="Log"]', timeout=20)
-        await logs_button.click()
-
-        await process_logs(tab, client, pending_responses, linked_accounts, console_queue)
-        
-
-    finally:
-        try:
-            if tab:
-                await tab.close()
-            if browser.connection:
-                await browser.connection.aclose()
-            browser.stop()
-        except Exception as e:
-            print(f"Error during browser closure: {e}")
         finally:
-            if browser._process:
-                browser._process.terminate()
-                await browser._process.wait()
+            try:
+                if tab:
+                    await tab.close()
+                if browser.connection:
+                    await browser.connection.aclose()
+                browser.stop()
+            except Exception as e:
+                print(f"Error during browser closure: {e}")
+            finally:
+                if browser._process:
+                    browser._process.terminate()
+                    await browser._process.wait()
 
 
 async def check_logs(tab: nodriver.Tab):
@@ -242,205 +247,209 @@ async def process_logs(tab: nodriver.Tab, client, pending_responses, linked_acco
         await asyncio.sleep(1.5)  # Refresh interval (1.5 seconds)
 
 async def get_console(queue: asyncio.Queue, client, pending_responses, linked_accounts):
-    print("console is being opened")
-    while True:  # Outer loop to handle reconnection
-        try:
-            # Check if server is online before opening browser
-            server_state = await starting_server(False)
-            if not server_state:  # Server is off
-                await asyncio.sleep(30)  # Wait before checking again
-                continue
-
-            browser = await nodriver.Browser.create()
+    with Display():
+        print("console is being opened")
+        while True:  # Outer loop to handle reconnection
             try:
-                # Open the target page
-                tab = await browser.get("https://aternos.org/go")
-                
-                # Log in
+                # Check if server is online before opening browser
+                server_state = await starting_server(False)
+                if not server_state:  # Server is off
+                    await asyncio.sleep(30)  # Wait before checking again
+                    continue
+
+                config = nodriver.Config(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+                browser = await nodriver.Browser.create(config=config)
                 try:
-                    input_username = await tab.select("input[placeholder='Username']")
-                    await input_username.send_keys("StarterBot")
+                    # Open the target page
+                    tab = await browser.get("https://aternos.org/go")
                     
-                    input_password = await tab.select("input[placeholder='••••••••']")
-                    await input_password.send_keys("BotAccount")
-                    
-                    login_button = await tab.select("button[title='Login']")
-                    await login_button.click()
-                except:
-                    pass
-
-                # Handle cookies consent if present
-                try:
-                    cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=10)
-                    await cookies.click()
-                except:
-                    pass
-
-                # Select the server
-                server_select = await tab.select('div[title="roadblocksjailbrokey"]', timeout=1000)
-                await server_select.click()
-                await asyncio.sleep(2)
-                await browser.get("https://aternos.org/server/#goog_rewarded")
-                try:
-                    cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=10)
-                    await cookies.click()
-                except:
-                    pass
-                await browser.get("https://aternos.org/server/#goog_rewarded")
-                console = await tab.select("a[title='Console'] span[class='navigation-item-label']")
-                await console.click()
-                await asyncio.sleep(3)
-                await browser.get("https://aternos.org/console/#goog_rewarded")
-                command_entry = await tab.select('#c-input', timeout=30)
-                await asyncio.sleep(1.5)
-
-                try:
-                    cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=10)
-                    await cookies.click()
-                except:
-                    pass
-                logs = asyncio.create_task(process_logs(tab, client, pending_responses, linked_accounts, queue))
+                    # Log in
+                    try:
+                        input_username = await tab.select("input[placeholder='Username']")
+                        await input_username.send_keys("StarterBot")
                         
-                iteration_count = 0
-                while True:
-                    await asyncio.sleep(1)
-                    print(f"iteration count: {iteration_count}")
-                    # Check server status every 10 iterations
-                    if iteration_count % 10 == 0:
-                        print("checking server state")
-                        server_state = await starting_server(False)
-                        print(f"server state: {server_state}")
-                        if not server_state:  # Server is off
-                            print("Server detected as offline, closing console tab")
-                            raise Exception("Server went offline")
-                    
-                    iteration_count += 1
-                    command = await queue.get()
-                    if command["action"] == "command":
-                        await command_entry.send_keys(command["text"])
-                        await asyncio.sleep(0.1)
-                        await tab.evaluate("""
-                        document.getElementById('c-input').dispatchEvent(new KeyboardEvent('keyup', { keyCode: 13, key: 'Enter' }));
-""")
+                        input_password = await tab.select("input[placeholder='••••••••']")
+                        await input_password.send_keys("BotAccount")
+                        
+                        login_button = await tab.select("button[title='Login']")
+                        await login_button.click()
+                    except:
+                        pass
 
-            finally:
-                try:
-                    if tab:
-                        await tab.close()
-                    if browser.connection:
-                        await browser.connection.aclose()
-                    browser.stop()
-                except Exception as e:
-                    print(f"Error during browser closure: {e}")
+                    # Handle cookies consent if present
+                    try:
+                        cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=10)
+                        await cookies.click()
+                    except:
+                        pass
+
+                    # Select the server
+                    server_select = await tab.select('div[title="roadblocksjailbrokey"]', timeout=1000)
+                    await server_select.click()
+                    await asyncio.sleep(2)
+                    await browser.get("https://aternos.org/server/#goog_rewarded")
+                    try:
+                        cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=10)
+                        await cookies.click()
+                    except:
+                        pass
+                    await browser.get("https://aternos.org/server/#goog_rewarded")
+                    console = await tab.select("a[title='Console'] span[class='navigation-item-label']")
+                    await console.click()
+                    await asyncio.sleep(3)
+                    await browser.get("https://aternos.org/console/#goog_rewarded")
+                    command_entry = await tab.select('#c-input', timeout=30)
+                    await asyncio.sleep(1.5)
+
+                    try:
+                        cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=10)
+                        await cookies.click()
+                    except:
+                        pass
+                    logs = asyncio.create_task(process_logs(tab, client, pending_responses, linked_accounts, queue))
+                            
+                    iteration_count = 0
+                    while True:
+                        await asyncio.sleep(1)
+                        print(f"iteration count: {iteration_count}")
+                        # Check server status every 10 iterations
+                        if iteration_count % 10 == 0:
+                            print("checking server state")
+                            server_state = await starting_server(False)
+                            print(f"server state: {server_state}")
+                            if not server_state:  # Server is off
+                                print("Server detected as offline, closing console tab")
+                                raise Exception("Server went offline")
+                        
+                        iteration_count += 1
+                        command = await queue.get()
+                        if command["action"] == "command":
+                            await command_entry.send_keys(command["text"])
+                            await asyncio.sleep(0.1)
+                            await tab.evaluate("""
+                            document.getElementById('c-input').dispatchEvent(new KeyboardEvent('keyup', { keyCode: 13, key: 'Enter' }));
+    """)
+
                 finally:
-                    if browser._process:
-                        browser._process.terminate()
-                        await browser._process.wait()
-                    
-        except Exception as e:
-            print(f"Console session ended: {e}")
-            await asyncio.sleep(30)  # Wait before attempting to reconnect
+                    try:
+                        if tab:
+                            await tab.close()
+                        if browser.connection:
+                            await browser.connection.aclose()
+                        browser.stop()
+                    except Exception as e:
+                        print(f"Error during browser closure: {e}")
+                    finally:
+                        if browser._process:
+                            browser._process.terminate()
+                            await browser._process.wait()
+                        
+            except Exception as e:
+                print(f"Console session ended: {e}")
+                await asyncio.sleep(30)  # Wait before attempting to reconnect
 
 async def maintain_server_tab():
-    browser = await nodriver.Browser.create()
-    print("Starting server monitoring tab")
-    try:
-        # Open the target page
-        tab = await browser.get("https://aternos.org/go")
-        
-        # Log in
+    with Display():
+        config = nodriver.Config(browser_executable_path="chromium-mac/Chromium.app/Contents/MacOS/Chromium")
+        browser = await nodriver.Browser.create(config=config)
+        print("Starting server monitoring tab")
         try:
-            input_username = await tab.select("input[placeholder='Username']")
-            await input_username.send_keys("StarterBot")
+            # Open the target page
+            tab = await browser.get("https://aternos.org/go")
             
-            input_password = await tab.select("input[placeholder='••••••••']")
-            await input_password.send_keys("BotAccount")
-            
-            login_button = await tab.select("button[title='Login']")
-            await login_button.click()
-        except:
-            pass
-
-        # Handle cookies consent if present
-        try:
-            cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=10)
-            await cookies.click()
-        except:
-            pass
-
-        # Select the server
-        server_select = await tab.select('div[title="roadblocksjailbrokey"]', timeout=1000)
-        await server_select.click()
-        await asyncio.sleep(1.5)
-        await browser.get("https://aternos.org/server/#goog_rewarded")
-        try:
-            cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=5)
-            await cookies.click()
-        except:
-            pass
-        print("okay made it to the while true")
-        while True:
+            # Log in
             try:
-                command = await server_queue.get()
-                if command["action"] == "start_server":
-                    status_element = await tab.select(".statuslabel-label", timeout=5)
-                    status_text = status_element.text
-                    if "offline" not in status_text.lower(): 
-                        print("server is already running, not starting now")
-                        await command["response_queue"].put({"start_time": False})
-                        continue
-                    start_time = get_time()
-                    # Find and click the start button
-                    start_button = await tab.select("#start")
-                    if start_button:
-                        await start_button.click()
-                        print("Server start initiated")
-                    else:
-                        print("couldn't find start button")
-                        await command["response_queue".put({"start_time": False})]
-                        continue
-                    status_element = await tab.select(".statuslabel-label", timeout=5)
-                    status_text = status_element.text
-                    while "online" not in status_text.lower():
-                        await asyncio.sleep(0.1)
-                        status_text = await tab.select(".statuslabel-label", timeout=5)
-                        status_text = status_text.text
-                    await command["response_queue"].put({"start_time": get_time()-start_time})
-                elif command["action"] == "check_status":
-                    # Check if server is running by looking for specific elements
-                    try:
+                input_username = await tab.select("input[placeholder='Username']")
+                await input_username.send_keys("StarterBot")
+                
+                input_password = await tab.select("input[placeholder='••••••••']")
+                await input_password.send_keys("BotAccount")
+                
+                login_button = await tab.select("button[title='Login']")
+                await login_button.click()
+            except:
+                pass
+
+            # Handle cookies consent if present
+            try:
+                cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=10)
+                await cookies.click()
+            except:
+                pass
+
+            # Select the server
+            server_select = await tab.select('div[title="roadblocksjailbrokey"]', timeout=1000)
+            await server_select.click()
+            await asyncio.sleep(1.5)
+            await browser.get("https://aternos.org/server/#goog_rewarded")
+            try:
+                cookies = await tab.select('#theme-switch > div.fc-consent-root > div.fc-dialog-container > div.fc-dialog.fc-choice-dialog > div.fc-footer-buttons-container > div.fc-footer-buttons > button.fc-button.fc-cta-consent.fc-primary-button', timeout=5)
+                await cookies.click()
+            except:
+                pass
+            print("okay made it to the while true")
+            while True:
+                try:
+                    command = await server_queue.get()
+                    if command["action"] == "start_server":
                         status_element = await tab.select(".statuslabel-label", timeout=5)
-                        status_text = status_element.text.strip()
-                        print(status_text)
-                        is_online = "online" in status_text.lower()
-                        await command["response_queue"].put({"server_online": is_online})
-                    except Exception as e:
-                        print(f"Error checking server status: {e}")
-                        await command["response_queue"].put({"server_online": False})
-                await asyncio.sleep(0.75)
+                        status_text = status_element.text
+                        if "offline" not in status_text.lower(): 
+                            print("server is already running, not starting now")
+                            await command["response_queue"].put({"start_time": False})
+                            continue
+                        start_time = get_time()
+                        # Find and click the start button
+                        start_button = await tab.select("#start")
+                        if start_button:
+                            await start_button.click()
+                            print("Server start initiated")
+                        else:
+                            print("couldn't find start button")
+                            await command["response_queue".put({"start_time": False})]
+                            continue
+                        status_element = await tab.select(".statuslabel-label", timeout=5)
+                        status_text = status_element.text
+                        while "online" not in status_text.lower():
+                            await asyncio.sleep(0.1)
+                            status_text = await tab.select(".statuslabel-label", timeout=5)
+                            status_text = status_text.text
+                        await command["response_queue"].put({"start_time": get_time()-start_time})
+                    elif command["action"] == "check_status":
+                        # Check if server is running by looking for specific elements
+                        try:
+                            status_element = await tab.select(".statuslabel-label", timeout=5)
+                            status_text = status_element.text.strip()
+                            print(status_text)
+                            is_online = "online" in status_text.lower()
+                            await command["response_queue"].put({"server_online": is_online})
+                        except Exception as e:
+                            print(f"Error checking server status: {e}")
+                            await command["response_queue"].put({"server_online": False})
+                    await asyncio.sleep(0.75)
 
 
-            except KeyboardInterrupt:
-                print("Code keyboard interrupted.")
-                break
+                except KeyboardInterrupt:
+                    print("Code keyboard interrupted.")
+                    break
 
-            except Exception as e:
-                print(f"Error in server tab: {e}")
-                await asyncio.sleep(1)
+                except Exception as e:
+                    print(f"Error in server tab: {e}")
+                    await asyncio.sleep(1)
 
-    finally:
-        try:
-            if tab:
-                await tab.close()
-            if browser.connection:
-                await browser.connection.aclose()
-            browser.stop()
-        except Exception as e:
-            print(f"Error during browser closure: {e}")
         finally:
-            if browser._process:
-                browser._process.terminate()
-                await browser._process.wait()
+            try:
+                if tab:
+                    await tab.close()
+                if browser.connection:
+                    await browser.connection.aclose()
+                browser.stop()
+            except Exception as e:
+                print(f"Error during browser closure: {e}")
+            finally:
+                if browser._process:
+                    browser._process.terminate()
+                    await browser._process.wait()
 
 async def check_server_status():
     print("checking server status")
