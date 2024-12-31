@@ -3,3 +3,4 @@ discord.py==2.4.0
 ip2geotools==0.1.6
 nodriver==0.38.post1
 python-dotenv==1.0.1
+PyVirtualDisplay==3.0
