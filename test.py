@@ -29,7 +29,7 @@ async def starting_server(starting):
         return await check_server_status()
 
 async def maintain_players_tab():
-    with Display(visible=0):
+    
         config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
         config.sandbox = True
         browser = await nodriver.Browser.create(config=config)
@@ -118,7 +118,7 @@ async def get_player_names():
     return result["players"]
 
 async def get_logs(client, pending_responses, linked_accounts, console_queue):
-    with Display(visible=0):
+    
         config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
         config.sandbox = True
         browser = await nodriver.Browser.create(config=config)
@@ -249,7 +249,7 @@ async def process_logs(tab: nodriver.Tab, client, pending_responses, linked_acco
         await asyncio.sleep(1.5)  # Refresh interval (1.5 seconds)
 
 async def get_console(queue: asyncio.Queue, client, pending_responses, linked_accounts):
-    with Display(visible=0):
+    
         print("console is being opened")
         while True:  # Outer loop to handle reconnection
             try:
@@ -352,7 +352,7 @@ async def get_console(queue: asyncio.Queue, client, pending_responses, linked_ac
                 await asyncio.sleep(30)  # Wait before attempting to reconnect
 
 async def maintain_server_tab():
-    with Display(visible=0):
+    
         config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
         config.sandbox = True
         browser = await nodriver.Browser.create(config=config)
