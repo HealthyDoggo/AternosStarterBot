@@ -22,7 +22,7 @@ linked_accounts = load_linked_accounts()
 
 
 console_queue = asyncio.Queue()
-
+print("output testing")
 async def handle_player_response(message: discord.Message, address):
     if message.content.lower() == 'yes':
         await message.author.send(f"Thank you for confirming. Your login from IP {address} is authorised.")
