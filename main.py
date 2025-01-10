@@ -10,7 +10,7 @@ import time
 import asyncio
 from helpers import save_pending_responses, save_linked_accounts, save_correct_ip_addresses, load_pending_responses, load_linked_accounts, load_correct_ip_addresses
 
-# load_dotenv()
+
 TOKEN = os.getenv('DISCORD_TOKEN')
 SERVER = os.getenv('SERVER_ID')
 intents = discord.Intents.default()
