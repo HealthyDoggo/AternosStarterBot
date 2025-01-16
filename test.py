@@ -33,7 +33,7 @@ async def maintain_players_tab():
         config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
         config.sandbox = True
         browser = await nodriver.Browser.create(config=config)
-        print("Starting player monitoring tab")
+        print("Starting player monitoring tab", flush=True)
         try:
             # Open the target page
             tab = await browser.get("https://aternos.org/go")
@@ -66,7 +66,7 @@ async def maintain_players_tab():
             # Navigate to players page
             players_link = await tab.select("a[title='Players']")
             await players_link.click()
-            print("okay made it to the players while true")
+            print("okay made it to the players while true", flush=True)
             while True:
                 try:
                     command = await player_queue.get()
@@ -85,16 +85,16 @@ async def maintain_players_tab():
                             
                             await command["response_queue"].put({"players": player_names})
                         except Exception as e:
-                            print(f"Error getting player names: {e}")
+                            print(f"Error getting player names: {e}", flush=True)
                             await command["response_queue"].put({"players": []})
                     await asyncio.sleep(0.75)
 
                 except KeyboardInterrupt:
-                    print("Code keyboard interrupted.")
+                    print("Code keyboard interrupted.", flush=True)
                     break
 
                 except Exception as e:
-                    print(f"Error in players tab: {e}")
+                    print(f"Error in players tab: {e}", flush=True)
                     await asyncio.sleep(1)
 
         finally:
@@ -105,7 +105,7 @@ async def maintain_players_tab():
                     await browser.connection.aclose()
                 browser.stop()
             except Exception as e:
-                print(f"Error during browser closure: {e}")
+                print(f"Error during browser closure: {e}", flush=True)
             finally:
                 if browser._process:
                     browser._process.terminate()
@@ -165,7 +165,7 @@ async def get_logs(client, pending_responses, linked_accounts, console_queue):
                     await browser.connection.aclose()
                 browser.stop()
             except Exception as e:
-                print(f"Error during browser closure: {e}")
+                print(f"Error during browser closure: {e}", flush=True)
             finally:
                 if browser._process:
                     browser._process.terminate()
@@ -187,23 +187,23 @@ async def check_logs(tab: nodriver.Tab):
             log_entries.append(clean_log)
         return log_entries
     except Exception as e:
-        print(f"Error occurred while fetching logs: {e}")
+        print(f"Error occurred while fetching logs: {e}", flush=True)
         return []
 
 async def extract_login_info(log):
     """Extract the player username and IP address from a login log entry."""
     # Regex pattern to match the username and IP address
     pattern = r'\[.*?\]: (\S+)\[/(\d+\.\d+\.\d+\.\d+):\d+\] logged in with entity id'
-    print("is this thing on or what")
+    print("is this thing on or what", flush=True)
     
     match = re.search(pattern, log)
     
     if match:
         username = match.group(1)  # The player username
         ip_address = match.group(2)  # The IP address
-        print("username and ip being returned.")
+        print("username and ip being returned.", flush=True)
         return username, ip_address
-    print("none being returned, username and ip could not be found..?")
+    print("none being returned, username and ip could not be found..?", flush=True)
     return None, None
 async def send_ip_mismatch_dm(username, ip, client, pending_responses, linked_accounts):
     try:
@@ -212,7 +212,7 @@ async def send_ip_mismatch_dm(username, ip, client, pending_responses, linked_ac
         pending_responses.append([user.id, ip])
         save_pending_responses(pending_responses)
     except KeyError:
-        print(f"User {username} not linked to discord.")
+        print(f"User {username} not linked to discord.", flush=True)
 
 async def process_logs(tab: nodriver.Tab, client, pending_responses, linked_accounts, console_queue: asyncio.Queue):
     """Process the logs and check for player login messages."""
@@ -222,9 +222,9 @@ async def process_logs(tab: nodriver.Tab, client, pending_responses, linked_acco
         for log in reversed(log_entries):
             if log != last_checked_log:
                 if "logged in with entity id" in log:
-                    print(log)
+                    print(log, flush=True)
                     username, ip_address = await extract_login_info(log)
-                    print(f"Detected login: {username} from IP {ip_address}, detected city as {HostIP.get(ip_address=ip_address).city}")
+                    print(f"Detected login: {username} from IP {ip_address}, detected city as {HostIP.get(ip_address=ip_address).city}", flush=True)
                     try:
                         correct_ip = player_ip_addresses[username]
                     except KeyError:
@@ -232,7 +232,7 @@ async def process_logs(tab: nodriver.Tab, client, pending_responses, linked_acco
                         save_correct_ip_addresses(player_ip_addresses)
                         correct_ip = ip_address
                     if ip_address not in correct_ip:
-                        print("FRADULENT LOGIN")
+                        print("FRADULENT LOGIN", flush=True)
                         await console_queue.put({"action": "command", "text": f"ban-ip {ip_address}"})
                         await send_ip_mismatch_dm(username, ip_address, client, pending_responses, linked_accounts)
             else:
@@ -250,7 +250,7 @@ async def process_logs(tab: nodriver.Tab, client, pending_responses, linked_acco
 
 async def get_console(queue: asyncio.Queue, client, pending_responses, linked_accounts):
     
-        print("console is being opened")
+        print("console is being opened", flush=True)
         while True:  # Outer loop to handle reconnection
             try:
                 # Check if server is online before opening browser
@@ -314,14 +314,14 @@ async def get_console(queue: asyncio.Queue, client, pending_responses, linked_ac
                     iteration_count = 0
                     while True:
                         await asyncio.sleep(1)
-                        print(f"iteration count: {iteration_count}")
+                        print(f"iteration count: {iteration_count}", flush=True)
                         # Check server status every 10 iterations
                         if iteration_count % 10 == 0:
-                            print("checking server state")
+                            print("checking server state", flush=True)
                             server_state = await starting_server(False)
-                            print(f"server state: {server_state}")
+                            print(f"server state: {server_state}", flush=True)
                             if not server_state:  # Server is off
-                                print("Server detected as offline, closing console tab")
+                                print("Server detected as offline, closing console tab", flush=True)
                                 raise Exception("Server went offline")
                         
                         iteration_count += 1
@@ -341,14 +341,14 @@ async def get_console(queue: asyncio.Queue, client, pending_responses, linked_ac
                             await browser.connection.aclose()
                         browser.stop()
                     except Exception as e:
-                        print(f"Error during browser closure: {e}")
+                        print(f"Error during browser closure: {e}", flush=True)
                     finally:
                         if browser._process:
                             browser._process.terminate()
                             await browser._process.wait()
                         
             except Exception as e:
-                print(f"Console session ended: {e}")
+                print(f"Console session ended: {e}", flush=True)
                 await asyncio.sleep(30)  # Wait before attempting to reconnect
 
 async def maintain_server_tab():
@@ -356,7 +356,7 @@ async def maintain_server_tab():
         config = nodriver.Config(browser_executable_path="/usr/bin/chromium")
         config.sandbox = True
         browser = await nodriver.Browser.create(config=config)
-        print("Starting server monitoring tab")
+        print("Starting server monitoring tab", flush=True)
         try:
             # Open the target page
             tab = await browser.get("https://aternos.org/go")
@@ -391,7 +391,7 @@ async def maintain_server_tab():
                 await cookies.click()
             except:
                 pass
-            print("okay made it to the while true")
+            print("okay made it to the while true", flush=True)
             while True:
                 try:
                     command = await server_queue.get()
@@ -399,7 +399,7 @@ async def maintain_server_tab():
                         status_element = await tab.select(".statuslabel-label", timeout=5)
                         status_text = status_element.text
                         if "offline" not in status_text.lower(): 
-                            print("server is already running, not starting now")
+                            print("server is already running, not starting now", flush=True)
                             await command["response_queue"].put({"start_time": False})
                             continue
                         start_time = get_time()
@@ -407,9 +407,9 @@ async def maintain_server_tab():
                         start_button = await tab.select("#start")
                         if start_button:
                             await start_button.click()
-                            print("Server start initiated")
+                            print("Server start initiated", flush=True)
                         else:
-                            print("couldn't find start button")
+                            print("couldn't find start button", flush=True)
                             await command["response_queue".put({"start_time": False})]
                             continue
                         status_element = await tab.select(".statuslabel-label", timeout=5)
@@ -424,21 +424,21 @@ async def maintain_server_tab():
                         try:
                             status_element = await tab.select(".statuslabel-label", timeout=5)
                             status_text = status_element.text.strip()
-                            print(status_text)
+                            print(status_text, flush=True)
                             is_online = "online" in status_text.lower()
                             await command["response_queue"].put({"server_online": is_online})
                         except Exception as e:
-                            print(f"Error checking server status: {e}")
+                            print(f"Error checking server status: {e}", flush=True)
                             await command["response_queue"].put({"server_online": False})
                     await asyncio.sleep(0.75)
 
 
                 except KeyboardInterrupt:
-                    print("Code keyboard interrupted.")
+                    print("Code keyboard interrupted.", flush=True)
                     break
 
                 except Exception as e:
-                    print(f"Error in server tab: {e}")
+                    print(f"Error in server tab: {e}", flush=True)
                     await asyncio.sleep(1)
 
         finally:
@@ -449,14 +449,14 @@ async def maintain_server_tab():
                     await browser.connection.aclose()
                 browser.stop()
             except Exception as e:
-                print(f"Error during browser closure: {e}")
+                print(f"Error during browser closure: {e}", flush=True)
             finally:
                 if browser._process:
                     browser._process.terminate()
                     await browser._process.wait()
 
 async def check_server_status():
-    print("checking server status")
+    print("checking server status", flush=True)
     response_queue = asyncio.Queue()
     await server_queue.put({
         "action": "check_status",

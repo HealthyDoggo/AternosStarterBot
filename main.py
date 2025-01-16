@@ -140,10 +140,12 @@ with open('output.txt', 'w') as stdout, open('errors.txt', 'w') as stderr:
             print(f'{client.user} has connected to Discord!', flush=True)
             await tree.sync(guild=discord.Object(id=int(SERVER)))
             asyncio.create_task(maintain_server_tab())
+            print('maintain server tab activated', flush=True)
             await asyncio.sleep(7)
             asyncio.create_task(maintain_players_tab())
             await asyncio.sleep(7)
             asyncio.create_task(get_console(console_queue, client, pending_responses, linked_accounts))
+            print('console tab activated, on_ready ended', flush=True)
 
         @client.event
         async def on_message(message: discord.Message):
